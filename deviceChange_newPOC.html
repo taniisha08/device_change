@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Media Devices</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+</head>
+
+<body>
+    <button type="button" onclick="updateDeviceList()">Start</button>
+    <div class="left">
+        <h2>Audio devices:</h2>
+        <ul class="deviceList" id="audioList"></ul>
+    </div>
+    <div class="right">
+        <h2>Video devices:</h2>
+        <ul class="deviceList" id="videoList"></ul>
+    </div>
+    <div class="right">
+        <h2>Changed devices:</h2>
+        <ul class="devicelist" id="changelist"></ul>
+    </div>
+
+    <script>
+        const audioList = document.getElementById("audioList");
+        const videoList = document.getElementById("videoList");
+        const changeDeviceList = document.getElementById("changelist");
+
+        var devices = [],
+            oldDEvices = [];
+
+        function updateDeviceList() {
+            navigator.mediaDevices.getUserMedia({
+                audio : true,
+                video: true
+            }).then(function(){
+                devices = []
+            navigator.mediaDevices.enumerateDevices()
+                .then((devices) => {
+                    audioList.innerHTML = "";
+                    videoList.innerHTML = "";
+
+                    devices.forEach((device) => {
+                        const elem = document.createElement("li");
+                        const [kind, type, direction] = device.kind.match(/(\w+)(input|output)/i);
+                        devices.push(device.label + direction);
+                        elem.innerHTML = `<strong>${device.label}</strong> (${direction})`;
+                        if (type === "audio") {
+                            audioList.appendChild(elem);
+                        } else if (type === "video") {
+                            videoList.appendChild(elem);
+                        }
+                    });
+                    if (oldDEvices.length > 0) {
+                        if (JSON.stringify(oldDEvices) !== JSON.stringify(devices)) {
+                            changeDeviceList.innerHTML = "";
+                            // detecting the changed devices 
+                            // Extract device labels from the given arrays and create new arrays with them
+                            var devicesLabels = devices.map(device => device.label);
+                            var oldDevicesLabels = oldDEvices.map(device => device.label);
+
+                            // Create sets of device labels
+                            var devicesSet = new Set(devicesLabels);
+                            var oldDevicesSet = new Set(oldDevicesLabels);
+
+                            // Find devices that are present in devicesSet but not in oldDevicesSet
+                            var addedDevices = [...devicesSet].filter(label => !oldDevicesSet.has(label));
+
+                            // Find devices that are present in oldDevicesSet but not in devicesSet
+                            var removedDevices = [...oldDevicesSet].filter(label => !devicesSet.has(label));
+
+                            // alert('Device change detected');
+                        }
+                    }
+
+                            if ( addedDevices && addedDevices.length > 0) {
+                                console.log("Added Devices:");
+                                console.log(addedDevices);
+                                addedDevices.forEach(function (device) {
+                                    const elem = document.createElement("li");
+                                    elem.innerHTML = "Device Added : " + `<strong>${device}</strong>`;
+                                    changeDeviceList.appendChild(elem);
+                                });
+                            }
+
+                            if (removedDevices && removedDevices.length > 0) {
+                                // Log the removed devices
+                                console.log("Removed Devices:");
+                                console.log(removedDevices);
+                                changeDeviceList.innerHTML = "";
+                                removedDevices.forEach(function (device) {
+                                    const elem = document.createElement("li");
+                                    elem.innerHTML = "Device Removed : " + `<strong>${device}</strong>`;
+                                    changeDeviceList.appendChild(elem);
+                                });
+                            }
+                    oldDEvices = Object.assign(devices);
+                });
+            })
+            .catch(function(ex){
+                alert('something went wrong : permission denied');
+            })
+        }
+        navigator.mediaDevices.ondevicechange = (event) => {
+            updateDeviceList();
+        };
+        updateDeviceList();
+        if (true) {
+            setInterval(function () {
+                navigator.mediaDevices.enumerateDevices();
+                // updateDeviceList();
+            }, 5000)
+        }
+    </script>
+</body>
+
+</html>
